@@ -1,0 +1,24 @@
+{
+  "properties": {
+    "description": {
+      "type": "text"
+    },
+    "name": {
+      "type": "text"
+    },
+    "pic":{
+      "type":"text",
+      "index":false
+    },
+    "price": {
+      "type": "float"
+    },
+    "studymodel": {
+      "type": "keyword"
+    },
+    "timestamp": {
+      "type": "date",
+      "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd||epoch_millis"
+    }
+  }
+}
