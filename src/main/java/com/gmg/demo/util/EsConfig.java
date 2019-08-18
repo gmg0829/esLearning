@@ -24,6 +24,8 @@ public class EsConfig {
 
     private String hostlist;
 
+    private  String bookIndex;
+
     @Bean
     public RestHighLevelClient restHighLevelClient(){
         List<String> list=Arrays.asList(hostlist.split("'"));
@@ -43,5 +45,13 @@ public class EsConfig {
 
     public void setHostlist(String hostlist) {
         this.hostlist = hostlist;
+    }
+
+    public String getBookIndex() {
+        return bookIndex;
+    }
+
+    public void setBookIndex(String bookIndex) {
+        this.bookIndex = bookIndex;
     }
 }

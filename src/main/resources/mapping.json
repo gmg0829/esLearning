@@ -4,7 +4,8 @@
       "type": "text"
     },
     "name": {
-      "type": "text"
+      "type": "text",
+      "fielddata": true
     },
     "pic":{
       "type":"text",

@@ -6,6 +6,8 @@ import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -24,27 +26,22 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.script.mustache.SearchTemplateRequest;
 import org.elasticsearch.script.mustache.SearchTemplateResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.Stats;
+import org.elasticsearch.search.aggregations.metrics.StatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.ScoreSortBuilder;
-import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -54,8 +51,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-
-import static java.util.Collections.singletonMap;
 
 /**
  * @author gmg
@@ -233,18 +228,14 @@ public class ESControllerRestHigh {
         searchSourceBuilder.fetchSource(new String[]{"name","description"}, new String[]{})
                 .query(QueryBuilders.matchAllQuery()).from(0).size(5);
 
+
+
 //        searchSourceBuilder.sort(new ScoreSortBuilder().order(SortOrder.DESC));
 //        searchSourceBuilder.sort(new FieldSortBuilder("price").order(SortOrder.ASC));
 
-        TermsAggregationBuilder aggregation = AggregationBuilders.terms("by_company")
-                .field("company.keyword");
-        aggregation.subAggregation(AggregationBuilders.avg("average_age")
-                .field("price"));
-        searchSourceBuilder.aggregation(aggregation);
-
         //2、构造查询请求对象
         SearchRequest searchRequest = new SearchRequest("posts");
-        searchRequest.types("doc")
+        searchRequest
                 .source(searchSourceBuilder);
         //3、client 执行查询
         SearchResponse searchResponse = highLevelClient.search(searchRequest,RequestOptions.DEFAULT);
@@ -305,6 +296,7 @@ public class ESControllerRestHigh {
         boolQueryBuilder.filter(QueryBuilders.termQuery("studymodel", "201001"))
                 .filter(QueryBuilders.rangeQuery("price").gte(60).lte(100));
 
+
         //2、构造查询源
         SearchSourceBuilder ssb = new SearchSourceBuilder();
         ssb.fetchSource(new String[]{"name","pic"}, new String[]{});
@@ -332,6 +324,19 @@ public class ESControllerRestHigh {
         CountResponse count = restHighLevelClient.count(countRequest,RequestOptions.DEFAULT);
         return count.getCount();
 
+    }
+
+    @RequestMapping("buckRequest")
+    public void buckRequest() throws Exception{
+        BulkRequest request = new BulkRequest();
+        request.add(new IndexRequest("posts").id("1")
+                .source(XContentType.JSON,"field", "foo"));
+        request.add(new IndexRequest("posts").id("2")
+                .source(XContentType.JSON,"field", "bar"));
+        request.add(new IndexRequest("posts").id("3")
+                .source(XContentType.JSON,"field", "baz"));
+
+        BulkResponse bulkReponse=restHighLevelClient.bulk(request,RequestOptions.DEFAULT);
     }
 
     @RequestMapping("multiSearchRequest")
@@ -375,5 +380,93 @@ public class ESControllerRestHigh {
         SearchTemplateResponse response = restHighLevelClient.searchTemplate(request, RequestOptions.DEFAULT);
     }
 
+
+    public  void queryBuilders(){
+        QueryBuilders.matchQuery("name", "葫芦4032娃");
+        QueryBuilders.multiMatchQuery(
+                "山西省太原市7429街道",
+                "home", "now_home"
+        );
+        QueryBuilders
+                .boolQuery()
+                .must(QueryBuilders.termQuery("name", "葫芦3033娃"))
+                .must(QueryBuilders.termQuery("home", "山西省太原市7967街道"))
+                .mustNot(QueryBuilders.termQuery("isRealMen", false))
+                .should(QueryBuilders.termQuery("now_home", "山西省太原市"));
+
+        QueryBuilders.idsQuery().addIds("1111","2222");
+
+        //模糊查询
+        QueryBuilders.fuzzyQuery("name", "葫芦3582");
+
+    }
+
+    @RequestMapping("searchAllGroup")
+    public void searchAllGroup()throws Exception{
+        RestHighLevelClient highLevelClient= EsRestHighUtil.getRestClient();
+
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        //
+        /*TermsAggregationBuilder aggregation = AggregationBuilders.terms("name_count")
+                .field("name");
+
+        aggregation.subAggregation(AggregationBuilders.avg("price_avg")
+                .field("price"));
+
+        aggregation.subAggregation(AggregationBuilders.sum("price_sum")
+                .field("price"));
+
+        aggregation.subAggregation(AggregationBuilders.min("price_min")
+                .field("price"));
+
+        aggregation.subAggregation(AggregationBuilders.max("price_max")
+                .field("price"));
+
+
+        searchSourceBuilder.aggregation(aggregation);*/
+
+        StatsAggregationBuilder aggregation =
+                AggregationBuilders
+                        .stats("agg")
+                        .field("price");
+
+        searchSourceBuilder.aggregation(aggregation);
+
+
+        SearchRequest searchRequest = new SearchRequest("posts");
+
+        searchRequest.source(searchSourceBuilder);
+
+        SearchResponse searchResponse = highLevelClient.search(searchRequest,RequestOptions.DEFAULT);
+
+        searchResponse.status();
+        searchResponse.getTook();
+        searchResponse.getTotalShards();
+        SearchHits hits=searchResponse.getHits();
+        hits.getTotalHits();
+
+        Stats agg = searchResponse.getAggregations().get("agg");
+        double min = agg.getMin();
+        double max = agg.getMax();
+        double avg = agg.getAvg();
+        double sum = agg.getSum();
+        long count = agg.getCount();
+
+       /* Map<String, Aggregation> aggMap = searchResponse.getAggregations().asMap();
+        Terms teamAgg= (Terms) aggMap.get("name_count");
+
+        for (Terms.Bucket entry : teamAgg.getBuckets()) {
+            Object key = entry.getKey();
+            long docCount = entry.getDocCount();
+            //得到所有子聚合
+            Avg price_avg = entry.getAggregations().get("price_avg");
+            Sum price_sum = entry.getAggregations().get("price_sum");
+            double avgValue = price_avg.getValue();
+            double sumValue = price_sum.getValue();
+            System.out.println("名字："+String.valueOf(key)+"个数："+docCount+"平均值："+String.valueOf(avgValue)+"和为：："+String.valueOf(sumValue));
+        }*/
+
+
+    }
 
 }
