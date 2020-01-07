@@ -484,6 +484,14 @@ public class ESControllerRestHigh {
 //                .addTokenFilter(stopFilter)
 //                .build("<b>Some text to analyze</b>");
 
+//        AnalyzeRequest request = AnalyzeRequest.withIndexAnalyzer(
+//                "my_index",
+//                "my_analyzer",
+//                "some text to analyze"
+//        );
+
+
+
         RestHighLevelClient highLevelClient= EsRestHighUtil.getRestClient();
 
         AnalyzeRequest request = AnalyzeRequest.withGlobalAnalyzer("english",
