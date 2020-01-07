@@ -26,6 +26,8 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
+import org.elasticsearch.client.indices.AnalyzeRequest;
+import org.elasticsearch.client.indices.AnalyzeResponse;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -50,6 +52,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -468,5 +471,42 @@ public class ESControllerRestHigh {
 
 
     }
+
+    @RequestMapping("analyze")
+    public void analyze()throws Exception{
+
+//        Map<String, Object> stopFilter = new HashMap<>();
+//        stopFilter.put("type", "stop");
+//        stopFilter.put("stopwords", new String[]{ "to" });
+//        AnalyzeRequest request = AnalyzeRequest.buildCustomAnalyzer("standard")
+//                .addCharFilter("html_strip")
+//                .addTokenFilter("lowercase")
+//                .addTokenFilter(stopFilter)
+//                .build("<b>Some text to analyze</b>");
+
+        RestHighLevelClient highLevelClient= EsRestHighUtil.getRestClient();
+
+        AnalyzeRequest request = AnalyzeRequest.withGlobalAnalyzer("english",
+                "Some text to analyze", "Some more text to analyze");
+
+        AnalyzeResponse response = highLevelClient.indices().analyze(request, RequestOptions.DEFAULT);
+
+        List<AnalyzeResponse.AnalyzeToken> tokens = response.getTokens();
+
+        for(AnalyzeResponse.AnalyzeToken t : tokens){
+            int endOffset = t.getEndOffset();
+            int position = t.getPosition();
+            int positionLength = t.getPositionLength();
+            int startOffset = t.getStartOffset();
+            String term = t.getTerm();
+            String type = t.getType();
+            System.out.println("Start:" + startOffset + ",End:" + endOffset + ",Position:" + position + ",Length:" + positionLength +
+                    ",Term:" + term + ",Type:" + type);
+        }
+
+
+    }
+
+
 
 }
