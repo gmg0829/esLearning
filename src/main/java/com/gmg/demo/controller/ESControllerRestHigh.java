@@ -32,6 +32,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.ScriptType;
@@ -40,6 +41,9 @@ import org.elasticsearch.script.mustache.SearchTemplateResponse;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
+import org.elasticsearch.search.aggregations.metrics.AvgAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.Stats;
 import org.elasticsearch.search.aggregations.metrics.StatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -516,5 +520,42 @@ public class ESControllerRestHigh {
     }
 
 
+    public  void orderOkPercent(){
+        SearchRequest request = new SearchRequest("post");
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().size(0);
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+
+        RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("time");
+        rangeQueryBuilder.gte("");
+        rangeQueryBuilder.lte("");
+        boolQueryBuilder.must(rangeQueryBuilder);
+
+        //日期直方图聚合
+        DateHistogramAggregationBuilder dateHistogramAggregationBuilder = AggregationBuilders.dateHistogram("day_order");
+        dateHistogramAggregationBuilder.field("time");
+
+
+        searchSourceBuilder.query(boolQueryBuilder).aggregation(dateHistogramAggregationBuilder);
+        request.source(searchSourceBuilder);
+
+
+
+        //统计每天有多少条数据,以及某字段的平均值。
+        AvgAggregationBuilder avgAggregationBuilder = AggregationBuilders
+                .avg("avg_aggsName")
+                .field("fieldName");
+
+        DateHistogramAggregationBuilder subAggregation = AggregationBuilders
+                .dateHistogram("aggsName")
+                .field("fieldName") //可以是time
+                .dateHistogramInterval(DateHistogramInterval.DAY)
+                .format("yyyy-MM-dd")
+                .minDocCount(0L)
+                .subAggregation(avgAggregationBuilder);
+
+
+
+
+    }
 
 }
