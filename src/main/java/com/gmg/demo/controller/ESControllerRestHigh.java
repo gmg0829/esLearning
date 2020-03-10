@@ -3,6 +3,8 @@ package com.gmg.demo.controller;
 import com.gmg.demo.util.EsRestHighUtil;
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.action.DocWriteResponse;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeRequest;
+import org.elasticsearch.action.admin.indices.analyze.AnalyzeResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
@@ -26,8 +28,6 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
-import org.elasticsearch.client.indices.AnalyzeRequest;
-import org.elasticsearch.client.indices.AnalyzeResponse;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -43,9 +43,9 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramAggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
-import org.elasticsearch.search.aggregations.metrics.AvgAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.Stats;
-import org.elasticsearch.search.aggregations.metrics.StatsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.avg.AvgAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.stats.Stats;
+import org.elasticsearch.search.aggregations.metrics.stats.StatsAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -151,7 +151,7 @@ public class ESControllerRestHigh {
             RestHighLevelClient highLevelClient= EsRestHighUtil.getRestClient();
 
 
-            GetRequest request = new GetRequest("posts","ePBxmGwBbioLHB_bIuDq");
+            GetRequest request = new GetRequest("posts","doc","ePBxmGwBbioLHB_bIuDq");
             /*String[] includes = new String[]{"pic","description","studymodel","price","timestamp","price"};
             String[] excludes = Strings.EMPTY_ARRAY;
             FetchSourceContext fetchSourceContext =
@@ -178,7 +178,7 @@ public class ESControllerRestHigh {
         RestHighLevelClient highLevelClient= EsRestHighUtil.getRestClient();
 
         try {
-            DeleteRequest request = new DeleteRequest("posts","1").version(2);
+            DeleteRequest request = new DeleteRequest("posts","doc","1").version(2);
             DeleteResponse deleteResponse = highLevelClient.delete(
                     request, RequestOptions.DEFAULT);
         } catch (IOException e) {
@@ -200,7 +200,7 @@ public class ESControllerRestHigh {
         RestHighLevelClient highLevelClient= EsRestHighUtil.getRestClient();
 
         try {
-            UpdateRequest request = new UpdateRequest("posts","ePBxmGwBbioLHB_bIuDq");
+            UpdateRequest request = new UpdateRequest("posts","doc","ePBxmGwBbioLHB_bIuDq");
 
             /*Map<String, Object> map = new HashMap<String,Object>();
             map.put("name", "Bootstrap框架");
@@ -476,50 +476,6 @@ public class ESControllerRestHigh {
 
     }
 
-    @RequestMapping("analyze")
-    public void analyze()throws Exception{
-
-//        Map<String, Object> stopFilter = new HashMap<>();
-//        stopFilter.put("type", "stop");
-//        stopFilter.put("stopwords", new String[]{ "to" });
-//        AnalyzeRequest request = AnalyzeRequest.buildCustomAnalyzer("standard")
-//                .addCharFilter("html_strip")
-//                .addTokenFilter("lowercase")
-//                .addTokenFilter(stopFilter)
-//                .build("<b>Some text to analyze</b>");
-
-//        AnalyzeRequest request = AnalyzeRequest.withIndexAnalyzer(
-//                "my_index",
-//                "my_analyzer",
-//                "some text to analyze"
-//        );
-
-
-
-        RestHighLevelClient highLevelClient= EsRestHighUtil.getRestClient();
-
-        AnalyzeRequest request = AnalyzeRequest.withGlobalAnalyzer("english",
-                "Some text to analyze", "Some more text to analyze");
-
-        AnalyzeResponse response = highLevelClient.indices().analyze(request, RequestOptions.DEFAULT);
-
-        List<AnalyzeResponse.AnalyzeToken> tokens = response.getTokens();
-
-        for(AnalyzeResponse.AnalyzeToken t : tokens){
-            int endOffset = t.getEndOffset();
-            int position = t.getPosition();
-            int positionLength = t.getPositionLength();
-            int startOffset = t.getStartOffset();
-            String term = t.getTerm();
-            String type = t.getType();
-            System.out.println("Start:" + startOffset + ",End:" + endOffset + ",Position:" + position + ",Length:" + positionLength +
-                    ",Term:" + term + ",Type:" + type);
-        }
-
-
-    }
-
-
     public  void orderOkPercent(){
         SearchRequest request = new SearchRequest("post");
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().size(0);
@@ -552,10 +508,6 @@ public class ESControllerRestHigh {
                 .format("yyyy-MM-dd")
                 .minDocCount(0L)
                 .subAggregation(avgAggregationBuilder);
-
-
-
-
     }
 
 }

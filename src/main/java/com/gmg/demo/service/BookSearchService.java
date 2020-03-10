@@ -97,7 +97,7 @@ public class BookSearchService {
             e.printStackTrace();
         }
 
-        int total = (int)searchResponse.getHits().getTotalHits().value;
+        int total = (int)searchResponse.getHits().getTotalHits();
         return CommonQueryUtils.buildResponsePage(searchResponse, form.getFrom(), form.getSize(), total);
     }
 

@@ -16,20 +16,9 @@ import org.elasticsearch.client.RestClientBuilder;
 public class EsRestLowUtil {
     public static RestClient getRestClient(){
         RestClient restClient = RestClient.builder(
-                new HttpHost("192.168.254.134", 9200, "http")
+                new HttpHost("localhost", 9200, "http")
         ).build();
         return  restClient;
     }
-
-
-    public static RestClientBuilder getRestClientBuilder(){
-        RestClientBuilder builder = RestClient.builder(new HttpHost("192.168.254.134", 9200, "http"));
-        Header[] defaultHeaders = new Header[]{new BasicHeader("header", "value")};
-        builder.setDefaultHeaders(defaultHeaders);
-        return  builder;
-    }
-
-
-
 
 }
